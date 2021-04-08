@@ -1,7 +1,9 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <Editor :data="sampleData" />
+    <Editor 
+    :data="sampleData"
+    @save="save($event)"
+    />
   </div>
 </template>
 
@@ -59,6 +61,25 @@ export default {
         "secToEnd":20
       }
     }
+  },
+  methods: {
+    save(data){
+      console.log('save')
+      console.log(data)
+      this.saveData(data, 'sample.json')
+    },
+    saveData(data, fileName) {
+      var a = document.createElement("a")
+      document.body.appendChild(a)
+      a.style = "display: none"
+      var json = JSON.stringify(data),
+          blob = new Blob([json], {type: "octet/stream"}),
+          url = window.URL.createObjectURL(blob)
+      a.href = url
+      a.download = fileName
+      a.click()
+      window.URL.revokeObjectURL(url)
+    }
   }
 }
 </script>
@@ -70,6 +91,5 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
 }
 </style>

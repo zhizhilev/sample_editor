@@ -1,60 +1,19 @@
 <template>
-  <div data-demo-id="draggableConnectors">
-
-
-        <div class="jtk-demo-main">
-            <!-- demo -->
-            <div class="jtk-demo-canvas canvas-wide drag-drop-demo jtk-surface jtk-surface-nopan" id="canvas">
-                <div class="window" id="dragDropWindow1">
-                    one
-                    <br/>
-                    <br/>
-                    <a href="#" class="cmdLink hide" rel="dragDropWindow1">toggle connections</a>
-                    <br/>
-                    <a href="#" class="cmdLink drag" rel="dragDropWindow1">disable dragging</a>
-                    <br/>
-                    <a href="#" class="cmdLink detach" rel="dragDropWindow1">detach all</a>
-                    <br/>
-                    <div id="dragDropWindow1Yes">Да</div>
-                    <br/>
-                    <div id="dragDropWindow1No">Нет</div>
-                    
-                </div>
-                <div class="window" id="dragDropWindow2">
-                    two
-                    <input type="text" value="two"/>
-
-                    <div id="dragDropWindow2Yes">Да</div>
-                    <br/>
-                    <div id="dragDropWindow2No">Нет</div>
-                </div>
-
-
-                <div v-for="item in items" :key="item.uid" class="window" :id="item.uid">
-                    
-                    <input type="text" v-model="item.url"/>
-
-                    <div :id="item.uid + 'Yes'">Да</div>
-                    <br/>
-                    <div :id="item.uid + 'No'">Нет</div>
-                </div>
-
-
-
-
-                <div id="list"></div>
-            </div>
-			<!-- /demo -->
+    <div class="main">
+        <div class="panel">
+            <button v-on:click="save()">Сохранить</button>
         </div>
+        <div class="editor" id="canvas">
+            <div v-for="item in items" :key="item.uid" class="window" :id="item.uid">
+                <input type="text" v-model="item.url"/>
+                <br/>
+                <div :id="item.uid + 'Yes'">Да</div>
+                <br/>
+                <div :id="item.uid + 'No'">Нет</div>
+            </div>
 
-
-        <!-- JS -->
-        <!-- <script src="../../dist/js/jsplumb.js"></script> -->
-        <!-- /JS -->
-
-		<!--  demo code -->
-		<!-- <script src="demo.js"></script> -->
-
+            <div id="list"></div>
+        </div>
     </div>
 </template>
 
@@ -67,6 +26,8 @@ export default {
     data: Object
   },
   data: function() {
+    const sourceColor = "#00f"
+    const targetColor = "#316b31"
     return {
         instance: null,
         items:[],
@@ -83,21 +44,20 @@ export default {
             hoverClass: "dropHover",
             activeClass: "dragActive"
         },
-        sourceColor:"#00f",
         sourceEndpoint: {
             endpoint: "Rectangle",
-            paintStyle: { width: 25, height: 21, fill: this.sourceColor },
+            paintStyle: { width: 25, height: 21, fill: sourceColor },
             isSource: true,
             reattach: true,
             scope: "blue",
             connectorStyle: {
                 gradient: {stops: [
-                    [0, this.sourceColor],
+                    [0, sourceColor],
                     [0.5, "#09098e"],
-                    [1, this.sourceColor]
+                    [1, sourceColor]
                 ]},
                 strokeWidth: 5,
-                stroke: this.sourceColor,
+                stroke: sourceColor,
                 dashstyle: "2 2"
             },
             beforeDrop: function (params) {
@@ -105,6 +65,16 @@ export default {
             },
             dropOptions: this.dropOptions
         },
+        targetEndpoint:{
+            endpoint: "Rectangle",
+            paintStyle: { fill: targetColor },
+            scope: "blue",
+            connectorStyle: { stroke: targetColor, strokeWidth: 6 },
+            connector: ["Bezier", { curviness: 63 } ],
+            maxConnections: 3,
+            isTarget: true,
+            dropOptions: this.dropOptions
+        }
         
     }
   },
@@ -170,15 +140,13 @@ export default {
         });
 
         self.instance = instance
-        self.qwe = instance
 
         // suspend drawing and initialise.
         self.instance.batch(function () {
 
             // bind to connection/connectionDetached events, and update the list of connections on screen.
             instance.bind("connection", function (info, originalEvent) {
-                console.log(originalEvent)
-                updateConnections(info.connection);
+                self.createConnection(info.connection);
             });
             instance.bind("connectionDetached", function (info, originalEvent) {
                 console.log(originalEvent)
@@ -198,123 +166,8 @@ export default {
                 alert("click!")
             });
 
-            // configure some drop options for use by all endpoints.
-            // var exampleDropOptions = {
-            //     tolerance: "touch",
-            //     hoverClass: "dropHover",
-            //     activeClass: "dragActive"
-            // };
-
-            //
-            // first example endpoint.  it's a 25x21 rectangle (the size is provided in the 'style' arg to the Endpoint),
-            // and it's both a source and target.  the 'scope' of this Endpoint is 'exampleConnection', meaning any connection
-            // starting from this Endpoint is of type 'exampleConnection' and can only be dropped on an Endpoint target
-            // that declares 'rectangleEndpoint' as its drop scope, and also that
-            // only 'exampleConnection' types can be dropped here.
-            //
-            // the connection style for this endpoint is a Bezier curve (we didn't provide one, so we use the default), with a strokeWidth of
-            // 5 pixels, and a gradient.
-            //
-            // there is a 'beforeDrop' interceptor on this endpoint which is used to allow the user to decide whether
-            // or not to allow a particular connection to be established.
-            //
-            
-            
-            // var exampleColor = "#00f";
-            // var rectangleEndpoint = {
-            //     endpoint: "Rectangle",
-            //     paintStyle: { width: 25, height: 21, fill: exampleColor },
-            //     isSource: true,
-            //     reattach: true,
-            //     scope: "blue",
-            //     connectorStyle: {
-            //         gradient: {stops: [
-            //             [0, exampleColor],
-            //             [0.5, "#09098e"],
-            //             [1, exampleColor]
-            //         ]},
-            //         strokeWidth: 5,
-            //         stroke: exampleColor,
-            //         dashstyle: "2 2"
-            //     },
-            //     beforeDrop: function (params) {
-            //         return confirm("Connect " + params.sourceId + " to " + params.targetId + "?");
-            //     },
-            //     dropOptions: this.dropOptions
-            // };
-
-
-            //
-            // the second example uses a Dot of radius 15 as the endpoint marker, is both a source and target,
-            // and has scope 'exampleConnection2'.
-            //
-            
-            var color2 = "#316b31";
-            var targetEndpoint = {
-                endpoint: "Rectangle",
-                paintStyle: { fill: color2 },
-                scope: "blue",
-                connectorStyle: { stroke: color2, strokeWidth: 6 },
-                connector: ["Bezier", { curviness: 63 } ],
-                maxConnections: 3,
-                isTarget: true,
-                dropOptions: self.dropOptions
-            };
-
-            
-
-            // setup some DynamicAnchors for use with the blue endpoints
-            // and a function to set as the maxConnections callback.
-            // var anchors = [
-            //         [1, 0.2, 1, 0],
-            //         [0.8, 1, 0, 1],
-            //         [0, 0.8, -1, 0],
-            //         [0.2, 0, 0, -1]
-            //     ],
-            // var    maxConnectionsCallback = function (info) {
-            //         alert("Cannot drop connection " + info.connection.id + " : maxConnections has been reached on Endpoint " + info.endpoint.id);
-            //     };
-
-            // var e1 = instance.addEndpoint("dragDropWindow1Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-            // // you can bind for a maxConnections callback using a standard bind call, but you can also supply 'onMaxConnections' in an Endpoint definition - see exampleEndpoint3 above.
-            // e1.bind("maxConnections", maxConnectionsCallback);
-
-            // e1 = instance.addEndpoint("dragDropWindow1No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-            // // you can bind for a maxConnections callback using a standard bind call, but you can also supply 'onMaxConnections' in an Endpoint definition - see exampleEndpoint3 above.
-            // e1.bind("maxConnections", maxConnectionsCallback);
-
-            var e2 = instance.addEndpoint('dragDropWindow2', { anchor: [0, 0.8, -1, 0] }, targetEndpoint);
-            // again we bind manually. it's starting to get tedious.  but now that i've done one of the blue endpoints this way, i have to do them all...
-            e2.bind("maxConnections", self.maxConnectionsCallback);
-            // instance.addEndpoint('dragDropWindow2', { anchor: "RightMiddle" }, exampleEndpoint2);
-
-            
-
-
             // make .window divs draggable
-            instance.draggable(jsPlumb.getSelector(".drag-drop-demo .window"));
-
-            // add endpoint of type 3 using a selector.
-            // instance.addEndpoint(jsPlumb.getSelector(".drag-drop-demo .window"), exampleEndpoint3);
-
-            var hideLinks = jsPlumb.getSelector(".drag-drop-demo .hide");
-            instance.on(hideLinks, "click", function (e) {
-                instance.toggleVisible(this.getAttribute("rel"));
-                jsPlumbUtil.consume(e);
-            });
-
-            var dragLinks = jsPlumb.getSelector(".drag-drop-demo .drag");
-            instance.on(dragLinks, "click", function (e) {
-                var s = instance.toggleDraggable(this.getAttribute("rel"));
-                this.innerHTML = (s ? 'disable dragging' : 'enable dragging');
-                jsPlumbUtil.consume(e);
-            });
-
-            var detachLinks = jsPlumb.getSelector(".drag-drop-demo .detach");
-            instance.on(detachLinks, "click", function (e) {
-                instance.deleteConnectionsForElement(this.getAttribute("rel"));
-                jsPlumbUtil.consume(e);
-            });
+            instance.draggable(jsPlumb.getSelector(".editor .window"));
 
             instance.on(document.getElementById("clear"), "click", function (e) {
                 instance.detachEveryConnection();
@@ -322,21 +175,13 @@ export default {
                 jsPlumbUtil.consume(e);
             });
         });
-        console.log(0)
+
         self.$nextTick(function () {
             self.createEndpoints()
+            console.log(self.items)
         })
     });
-    console.log(1)
   },
-    updated: function() {
-        console.log(3)
-        this.createEndpoints()
-    },
-    // mounted: function() {
-    //     console.log(2)
-    //     this.createEndpoints()
-    // },
     methods: {
         createItem(object){
             const uid = object.uid ?? this.generateUID()
@@ -345,61 +190,79 @@ export default {
                 url: object.url,
                 positiveAnswer: object.positiveAnswer ? this.createItem(object.positiveAnswer) : null,
                 negativeAnswer: object.negativeAnswer ? this.createItem(object.negativeAnswer) : null,
-                noAnswer: object.noAnswer ? this.createItem(object.noAnswer) : null,
+                noAnswer: object.noAnswer ? this.createItem(object.noAnswer) : null, //TODO: это забыл
                 secToEnd: object.secToEnd
             })
             return uid
         },
+        _getSourceSampleUid(id){
+            let index = id.indexOf('Yes')
+            if (index > -1) {
+                return {id: info.sourceId.slice(0, index), key: positiveAnswer}
+            }
+            index = id.indexOf('No')
+            if (index > -1) {
+                return {id: info.sourceId.slice(0, index), key: negativeAnswer}
+            }
+        },
+        createConnection(info){
+            console.log(info)
+            const srcData = this._getSourceSampleUid(info.sourceId)
+            
+            this.items.forEach(function(item) {
+                if (srcData.id == item.uid) {
+                    item[srcData.key] = info.targetId
+                    return
+                }
+            });
+        },
+        // initConnections(){
+        //     let self = this
+        //     this.instance.registerConnectionType("basic", { anchor:"Continuous", connector:"StateMachine" });
+        //     this.items.forEach(function(item) {
+        //         if () {
+
+        //         }
+        //         self.instance.connect({ source: "opened", target: "phone1", type:"basic" });
+        //     });
+        // },
         createEndpoints(){
             const self = this
             this.items.forEach(function(item) {
-                console.log(item)
-                console.log(item.uid + "Yes")
                 let eYes = self.instance.addEndpoint(item.uid + "Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-                console.log(eYes)
                 eYes.bind("maxConnections", self.maxConnectionsCallback);
+                
                 let eNo = self.instance.addEndpoint(item.uid + "No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
                 eNo.bind("maxConnections", self.maxConnectionsCallback);
+
+                let target = self.instance.addEndpoint(item.uid, { anchor: [0, 0.8, -1, 0] }, self.targetEndpoint);
+                target.bind("maxConnections", self.maxConnectionsCallback);
             });
         },
         maxConnectionsCallback (info) {
             alert("Cannot drop connection " + info.connection.id + " : maxConnections has been reached on Endpoint " + info.endpoint.id);
         },
 
-            // var e1 = instance.addEndpoint("dragDropWindow1Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-            // // you can bind for a maxConnections callback using a standard bind call, but you can also supply 'onMaxConnections' in an Endpoint definition - see exampleEndpoint3 above.
-            // e1.bind("maxConnections", maxConnectionsCallback);
 
-            // e1 = instance.addEndpoint("dragDropWindow1No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-            // // you can bind for a maxConnections callback using a standard bind call, but you can also supply 'onMaxConnections' in an Endpoint definition - see exampleEndpoint3 above.
-            // e1.bind("maxConnections", maxConnectionsCallback);
+        generateUID(){
+            // http://www.ietf.org/rfc/rfc4122.txt
+            var s = [];
+            var hexDigits = "0123456789abcdef";
+            for (var i = 0; i < 36; i++) {
+                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+            }
+            s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+            s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+            s[8] = s[13] = s[18] = s[23] = "-";
 
+            var uuid = s.join("");
+            return uuid;
 
-    //   itemEmpty:{
-    //         uid: null,
-    //         url: '',
-    //         positiveAnswer: null,
-    //         negativeAnswer: null,
-    //         noAnswer: null,
-    //         secToEnd: null
-    //     },
-
-      generateUID(){
-        // http://www.ietf.org/rfc/rfc4122.txt
-        var s = [];
-        var hexDigits = "0123456789abcdef";
-        for (var i = 0; i < 36; i++) {
-            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+        },
+        save(){
+            this.$emit('save', this.items)
         }
-        s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
-        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
-        s[8] = s[13] = s[18] = s[23] = "-";
-
-        var uuid = s.join("");
-        return uuid;
-
-      }
-  }
+    }
 }
 </script>
 
@@ -419,7 +282,7 @@ export default {
 #dragDropWindow4 { top:416px; left:600px; }
 
 /** ELEMENTS **/
-.drag-drop-demo .window {
+.editor .window {
     font-family: serif;
     font-style: italic;
     background-color: white;
@@ -455,11 +318,11 @@ export default {
 }
 
 
-.drag-drop-demo a, .drag-drop-demo a:visited {
+.editor a, .editor a:visited {
     color:#057D9F;
 }
 
-.drag-drop-demo a:hover {
+.editor a:hover {
     color:orange;
 }
 
