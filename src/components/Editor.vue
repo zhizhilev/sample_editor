@@ -145,7 +145,7 @@ export default {
         self.instance.batch(function () {
 
             // bind to connection/connectionDetached events, and update the list of connections on screen.
-            instance.bind("connection", function (info, originalEvent) {
+            instance.bind("connection", function (info) {
                 self.createConnection(info.connection);
             });
             instance.bind("connectionDetached", function (info, originalEvent) {
@@ -195,19 +195,19 @@ export default {
             })
             return uid
         },
-        _getSourceSampleUid(id){
-            let index = id.indexOf('Yes')
+        _getSourceSampleUid(info){
+            let index = info.sourceId.indexOf('Yes')
             if (index > -1) {
-                return {id: info.sourceId.slice(0, index), key: positiveAnswer}
+                return {id: info.sourceId.slice(0, index), key: 'positiveAnswer'}
             }
-            index = id.indexOf('No')
+            index = info.sourceId.indexOf('No')
             if (index > -1) {
-                return {id: info.sourceId.slice(0, index), key: negativeAnswer}
+                return {id: info.sourceId.slice(0, index), key: 'negativeAnswer'}
             }
         },
         createConnection(info){
             console.log(info)
-            const srcData = this._getSourceSampleUid(info.sourceId)
+            const srcData = this._getSourceSampleUid(info)
             
             this.items.forEach(function(item) {
                 if (srcData.id == item.uid) {
