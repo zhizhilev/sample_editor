@@ -20,6 +20,9 @@
 <script>
 import { jsPlumb , jsPlumbUtil }  from 'jsplumb'
 
+const SUFFIX_YES = "Yes"
+const SUFFIX_NO = "No"
+
 export default {
   name: 'Editor',
   props: {
@@ -37,7 +40,13 @@ export default {
             positiveAnswer: null,
             negativeAnswer: null,
             noAnswer: null,
-            secToEnd: null
+            secToEnd: null,
+            meta:{
+                position: {
+                    x: 0,
+                    y: 0
+                }
+            }
         },
         dropOptions: {
             tolerance: "touch",
@@ -81,7 +90,7 @@ export default {
   created: function(){
 
       this.createItem(this.data)
-
+console.log(3)
       console.log(this.items)
 
     var listDiv = document.getElementById("list"),
@@ -178,6 +187,8 @@ export default {
 
         self.$nextTick(function () {
             self.createEndpoints()
+            self.initConnections()
+            console.log(1)
             console.log(self.items)
         })
     });
@@ -196,17 +207,51 @@ export default {
             return uid
         },
         _getSourceSampleUid(info){
-            let index = info.sourceId.indexOf('Yes')
+            let index = info.sourceId.indexOf(SUFFIX_YES)
             if (index > -1) {
                 return {id: info.sourceId.slice(0, index), key: 'positiveAnswer'}
             }
-            index = info.sourceId.indexOf('No')
+            index = info.sourceId.indexOf(SUFFIX_NO)
             if (index > -1) {
                 return {id: info.sourceId.slice(0, index), key: 'negativeAnswer'}
             }
         },
+        initConnections(){
+            this.items.forEach((item) => {
+                if (item.positiveAnswer) {
+                    const target = this.gitItemByUid(item.positiveAnswer)
+                    this.instance.connect({ 
+                        source:item.positiveAnswerEndpoint, 
+                        target: target.targetEndpoint ,
+                        endpoint:"Rectangle",
+                    });
+                }
+                if (item.negativeAnswer) {
+                    const target = this.gitItemByUid(item.negativeAnswer)
+                    this.instance.connect({ 
+                        source:item.negativeAnswerEndpoint, 
+                        target: target.targetEndpoint ,
+                        endpoint:"Rectangle",
+                    });
+                }
+                //TODO:  noAnswer: null,
+            });
+            
+        },
+
+
+        gitItemByUid(uid){
+            var result = null;
+            this.items.forEach((item) => {
+                if (item.uid == uid) {
+                   result = item
+                }
+            });
+            return result
+        },
+
         createConnection(info){
-            console.log(info)
+            //console.log(info)
             const srcData = this._getSourceSampleUid(info)
             
             this.items.forEach(function(item) {
@@ -215,6 +260,8 @@ export default {
                     return
                 }
             });
+            console.log(2)
+            console.log(this.items)
         },
         // initConnections(){
         //     let self = this
@@ -229,14 +276,15 @@ export default {
         createEndpoints(){
             const self = this
             this.items.forEach(function(item) {
-                let eYes = self.instance.addEndpoint(item.uid + "Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-                eYes.bind("maxConnections", self.maxConnectionsCallback);
+                item.positiveAnswerEndpoint =  self.instance.addEndpoint(item.uid + "Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
+                item.positiveAnswerEndpoint.bind("maxConnections", self.maxConnectionsCallback);
                 
-                let eNo = self.instance.addEndpoint(item.uid + "No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
-                eNo.bind("maxConnections", self.maxConnectionsCallback);
+                
+                item.negativeAnswerEndpoint = self.instance.addEndpoint(item.uid + "No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
+                item.negativeAnswerEndpoint.bind("maxConnections", self.maxConnectionsCallback);
 
-                let target = self.instance.addEndpoint(item.uid, { anchor: [0, 0.8, -1, 0] }, self.targetEndpoint);
-                target.bind("maxConnections", self.maxConnectionsCallback);
+                item.targetEndpoint = self.instance.addEndpoint(item.uid, { anchor: [0, 0.8, -1, 0] }, self.targetEndpoint);
+                item.targetEndpoint.bind("maxConnections", self.maxConnectionsCallback);
             });
         },
         maxConnectionsCallback (info) {
