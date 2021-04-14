@@ -10,6 +10,8 @@
                 <div :id="item.uid + 'Yes'">Да</div>
                 <br/>
                 <div :id="item.uid + 'No'">Нет</div>
+                <br/>
+                <div :id="item.uid + 'Empty'">Нет ответа</div>
             </div>
 
             <div id="list"></div>
@@ -22,6 +24,7 @@ import { jsPlumb , jsPlumbUtil }  from 'jsplumb'
 
 const SUFFIX_YES = "Yes"
 const SUFFIX_NO = "No"
+const SUFFIX_EMPTY = "Empty" // No answer
 
 export default {
   name: 'Editor',
@@ -60,14 +63,14 @@ export default {
             reattach: true,
             scope: "blue",
             connectorStyle: {
-                gradient: {stops: [
-                    [0, sourceColor],
-                    [0.5, "#09098e"],
-                    [1, sourceColor]
-                ]},
+                // gradient: {stops: [
+                //     [0, sourceColor],
+                //     [0.5, "#09098e"],
+                //     [1, sourceColor]
+                // ]},
                 strokeWidth: 5,
                 stroke: sourceColor,
-                dashstyle: "2 2"
+                // dashstyle: "2 2"
             },
             beforeDrop: function (params) {
                 return confirm("Connect " + params.sourceId + " to " + params.targetId + "?");
@@ -89,42 +92,7 @@ export default {
   },
   created: function(){
 
-      this.createItem(this.data)
-console.log(3)
-      console.log(this.items)
-
-    var listDiv = document.getElementById("list"),
-
-        showConnectionInfo = function (s) {
-            listDiv.innerHTML = s;
-            listDiv.style.display = "block";
-        },
-        hideConnectionInfo = function () {
-            listDiv.style.display = "none";
-        },
-        connections = [],
-        updateConnections = function (conn, remove) {
-            if (!remove) connections.push(conn);
-            else {
-                var idx = -1;
-                for (var i = 0; i < connections.length; i++) {
-                    if (connections[i] == conn) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx != -1) connections.splice(idx, 1);
-            }
-            if (connections.length > 0) {
-                var s = "<span><strong>Connections</strong></span><br/><br/><table><tr><th>Scope</th><th>Source</th><th>Target</th></tr>";
-                for (var j = 0; j < connections.length; j++) {
-                    s = s + "<tr><td>" + connections[j].scope + "</td>" + "<td>" + connections[j].sourceId + "</td><td>" + connections[j].targetId + "</td></tr>";
-                }
-                showConnectionInfo(s);
-            } else
-                hideConnectionInfo();
-        };
-    
+    this.createItem(this.data)
     const self = this
     jsPlumb.ready(function () {
 
@@ -158,20 +126,20 @@ console.log(3)
                 self.createConnection(info.connection);
             });
             instance.bind("connectionDetached", function (info, originalEvent) {
-                console.log(originalEvent)
-                updateConnections(info.connection, true);
+                console.log(info, originalEvent)
+                //updateConnections(info.connection, true);
             });
 
             instance.bind("connectionMoved", function (info, originalEvent) {
-                console.log(originalEvent)
+                console.log(info, originalEvent)
                 //  only remove here, because a 'connection' event is also fired.
                 // in a future release of jsplumb this extra connection event will not
                 // be fired.
-                updateConnections(info.connection, true);
+                //updateConnections(info.connection, true);
             });
 
             instance.bind("click", function (component, originalEvent) {
-                console.log(originalEvent)
+                console.log(component, originalEvent)
                 alert("click!")
             });
 
@@ -180,7 +148,7 @@ console.log(3)
 
             instance.on(document.getElementById("clear"), "click", function (e) {
                 instance.detachEveryConnection();
-                showConnectionInfo("");
+                // showConnectionInfo("");
                 jsPlumbUtil.consume(e);
             });
         });
@@ -188,12 +156,15 @@ console.log(3)
         self.$nextTick(function () {
             self.createEndpoints()
             self.initConnections()
-            console.log(1)
-            console.log(self.items)
         })
     });
   },
     methods: {
+        getSourceEndpointWithColor(color){
+            let sourceEndpoint = JSON.parse(JSON.stringify(this.sourceEndpoint)) //TODO: lodash?
+            sourceEndpoint.connectorStyle.stroke = color
+            return sourceEndpoint
+        },
         createItem(object){
             const uid = object.uid ?? this.generateUID()
             this.items.push({
@@ -201,7 +172,7 @@ console.log(3)
                 url: object.url,
                 positiveAnswer: object.positiveAnswer ? this.createItem(object.positiveAnswer) : null,
                 negativeAnswer: object.negativeAnswer ? this.createItem(object.negativeAnswer) : null,
-                noAnswer: object.noAnswer ? this.createItem(object.noAnswer) : null, //TODO: это забыл
+                noAnswer: object.noAnswer ? this.createItem(object.noAnswer) : null,
                 secToEnd: object.secToEnd
             })
             return uid
@@ -214,6 +185,10 @@ console.log(3)
             index = info.sourceId.indexOf(SUFFIX_NO)
             if (index > -1) {
                 return {id: info.sourceId.slice(0, index), key: 'negativeAnswer'}
+            }
+            index = info.sourceId.indexOf(SUFFIX_EMPTY)
+            if (index > -1) {
+                return {id: info.sourceId.slice(0, index), key: 'noAnswer'}
             }
         },
         initConnections(){
@@ -234,7 +209,14 @@ console.log(3)
                         endpoint:"Rectangle",
                     });
                 }
-                //TODO:  noAnswer: null,
+                if (item.noAnswer) {
+                    const target = this.gitItemByUid(item.noAnswer)
+                    this.instance.connect({ 
+                        source:item.noAnswerEndpoint, 
+                        target: target.targetEndpoint ,
+                        endpoint:"Rectangle",
+                    });
+                }
             });
             
         },
@@ -251,7 +233,6 @@ console.log(3)
         },
 
         createConnection(info){
-            //console.log(info)
             const srcData = this._getSourceSampleUid(info)
             
             this.items.forEach(function(item) {
@@ -260,28 +241,18 @@ console.log(3)
                     return
                 }
             });
-            console.log(2)
-            console.log(this.items)
         },
-        // initConnections(){
-        //     let self = this
-        //     this.instance.registerConnectionType("basic", { anchor:"Continuous", connector:"StateMachine" });
-        //     this.items.forEach(function(item) {
-        //         if () {
-
-        //         }
-        //         self.instance.connect({ source: "opened", target: "phone1", type:"basic" });
-        //     });
-        // },
         createEndpoints(){
             const self = this
             this.items.forEach(function(item) {
-                item.positiveAnswerEndpoint =  self.instance.addEndpoint(item.uid + "Yes", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
+                item.positiveAnswerEndpoint =  self.instance.addEndpoint(item.uid + SUFFIX_YES, { anchor: [1, 0.2, 1, 0] }, self.getSourceEndpointWithColor('green'));
                 item.positiveAnswerEndpoint.bind("maxConnections", self.maxConnectionsCallback);
                 
-                
-                item.negativeAnswerEndpoint = self.instance.addEndpoint(item.uid + "No", { anchor: [1, 0.2, 1, 0] }, self.sourceEndpoint);
+                item.negativeAnswerEndpoint = self.instance.addEndpoint(item.uid + SUFFIX_NO, { anchor: [1, 0.2, 1, 0] }, self.getSourceEndpointWithColor('red'));
                 item.negativeAnswerEndpoint.bind("maxConnections", self.maxConnectionsCallback);
+
+                item.noAnswerEndpoint = self.instance.addEndpoint(item.uid + SUFFIX_EMPTY, { anchor: [1, 0.2, 1, 0] }, self.getSourceEndpointWithColor('orange'));
+                item.noAnswerEndpoint.bind("maxConnections", self.maxConnectionsCallback);
 
                 item.targetEndpoint = self.instance.addEndpoint(item.uid, { anchor: [0, 0.8, -1, 0] }, self.targetEndpoint);
                 item.targetEndpoint.bind("maxConnections", self.maxConnectionsCallback);
