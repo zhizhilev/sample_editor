@@ -7,11 +7,11 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
-  <body>
+  <body data-samples="[<?php implode(',', $samples) ?>]" data-json='{"url":"https://audio.cursor72.ru/media/test/one.mp3","positiveAnswer":{"url":"https://audio.cursor72.ru/media/test/one_yes.mp3","positiveAnswer":{"url":"https://audio.cursor72.ru/media/test/two_yes.mp3","positiveAnswer":null,"negativeAnswer":null,"noAnswer":null,"secToEnd":0},"negativeAnswer":{"url":"https://audio.cursor72.ru/media/test/two_no.mp3","positiveAnswer":null,"negativeAnswer":null,"noAnswer":null,"secToEnd":0},"noAnswer":{"url":"https://audio.cursor72.ru/media/test/two_no.mp3","positiveAnswer":null,"negativeAnswer":null,"noAnswer":null,"secToEnd":0},"secToEnd":0},"negativeAnswer":{"url":"https://audio.cursor72.ru/media/test/one_no.mp3","positiveAnswer":null,"negativeAnswer":null,"noAnswer":null,"secToEnd":0},"noAnswer":{"url":"https://audio.cursor72.ru/media/test/one_stop.mp3","positiveAnswer":null,"negativeAnswer":null,"noAnswer":null,"secToEnd":0},"secToEnd":20}'>
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    <div id="app"></div>
+    <div id="app" ></div>
     <!-- built files will be auto injected -->
   </body>
 </html>

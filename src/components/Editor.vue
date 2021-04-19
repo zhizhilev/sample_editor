@@ -29,7 +29,8 @@ const SUFFIX_EMPTY = "Empty" // No answer
 export default {
   name: 'Editor',
   props: {
-    data: Object
+    data: Object,
+    files: Array,
   },
   data: function() {
     const sourceColor = "#00f"
@@ -92,7 +93,8 @@ export default {
   },
   created: function(){
 
-    this.createItem(this.data)
+    this.createItems(this.data)
+    this.createNewItems()
     const self = this
     jsPlumb.ready(function () {
 
@@ -111,7 +113,7 @@ export default {
                     length: 14,
                     foldback: 0.8
                 } ],
-                [ "Label", { label: "FOO", id: "label", cssClass: "aLabel" }]
+                [ "Label", { label: "", id: "label", cssClass: "aLabel" }]
             ],
             Container: "canvas"
         });
@@ -165,17 +167,36 @@ export default {
             sourceEndpoint.connectorStyle.stroke = color
             return sourceEndpoint
         },
-        createItem(object){
-            const uid = object.uid ?? this.generateUID()
-            this.items.push({
-                uid: uid,
-                url: object.url,
-                positiveAnswer: object.positiveAnswer ? this.createItem(object.positiveAnswer) : null,
-                negativeAnswer: object.negativeAnswer ? this.createItem(object.negativeAnswer) : null,
-                noAnswer: object.noAnswer ? this.createItem(object.noAnswer) : null,
-                secToEnd: object.secToEnd
-            })
-            return uid
+        createItems(object){
+            if (object) {
+                if ('data' in object) {
+                    this.items = object.data
+                }
+            }
+        },
+        createNewItems() {
+            console.log(this.files)
+            for (let i = 0; i < this.files.length; i++) {
+                let exist = false
+                for (let j = 0; j < this.items.length; j++) {
+                    const _url = this.items[j].url.split('/')
+                    const fname = _url[_url.length - 1]
+                    if (this.files[i] == fname) {
+                        exist = true
+                        break
+                    }
+                }
+                if (!exist) {
+                    this.items.push({
+                        uid: this.generateUID(),
+                        url: this.files[i],
+                        positiveAnswer: null,
+                        negativeAnswer: null,
+                        noAnswer: null,
+                        secToEnd: 0
+                    })
+                }
+            }
         },
         _getSourceSampleUid(info){
             let index = info.sourceId.indexOf(SUFFIX_YES)
@@ -334,6 +355,10 @@ export default {
     -webkit-box-shadow: 2px 2px 19px #444;
     -moz-box-shadow: 2px 2px 19px #fff;
     opacity:0.9;
+}
+
+.window input{
+    width: 100%;
 }
 
 
